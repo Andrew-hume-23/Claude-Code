@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Play, ChevronRight, Check, Volume2, Plus, X,
   Mic2, MicOff, Square, Tag, MessageCircle,
-  ThumbsUp, ThumbsDown, Save, Send, Edit3,
+  ThumbsUp, ThumbsDown, Save, Send, Edit3, RotateCcw,
 } from "lucide-react";
 import { C, FONT } from "../tokens";
 import { MODELS } from "../mock/models";
@@ -84,12 +84,112 @@ const iconBtnSm = {
 // ---------- Compare tab constants ----------
 
 const compareRows = [
-  { label: "Reliability", k: "r", caption: "Latency, WER, endpointing" },
-  { label: "Expressivity", k: "e", caption: "Prosody, MOS, naturalness" },
+  { label: "Reliability",            k: "r", caption: "Latency, WER, endpointing" },
+  { label: "Expressivity",           k: "e", caption: "Prosody, MOS, naturalness" },
   { label: "Emotional Intelligence", k: "q", caption: "Empathy, attunement, tone" },
+  { label: "Consistency",            k: "c", caption: "Cross-turn coherence" },
+  { label: "Speed",                  k: "s", caption: "TTFB, streaming latency" },
 ];
 
-const SAMPLES = ["Frustration Recovery · prompt 14", "Healthcare Triage · prompt 22", "Cold Discovery · prompt 7"];
+const RADAR_AXES = [
+  { k: "r", label: "Reliability" },
+  { k: "e", label: "Expressivity" },
+  { k: "q", label: "EQ" },
+  { k: "c", label: "Consistency" },
+  { k: "s", label: "Speed" },
+];
+
+const SAMPLES = [
+  { label: "Frustration Recovery · prompt 14", pctA: 62 },
+  { label: "Healthcare Triage · prompt 22",    pctA: 71 },
+  { label: "Cold Discovery · prompt 7",        pctA: 48 },
+];
+
+// ---------- WaveformCanvas ----------
+
+function WaveformCanvas({ isPlaying, color, width = 100, height = 26 }) {
+  const canvasRef = useRef(null);
+  const rafRef    = useRef(null);
+  const phaseRef  = useRef(Math.random() * Math.PI * 2);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width, H = canvas.height;
+    const N = 28;
+
+    const draw = () => {
+      ctx.clearRect(0, 0, W, H);
+      phaseRef.current += isPlaying ? 0.07 : 0;
+      for (let i = 0; i < N; i++) {
+        const amp = isPlaying
+          ? 0.15 + Math.abs(Math.sin(i * 0.45 + phaseRef.current)) * 0.5
+                 + Math.abs(Math.sin(i * 1.1  + phaseRef.current * 0.6)) * 0.25
+          : 0.1 + Math.abs(Math.sin(i * 0.5)) * 0.12;
+        const h  = amp * H;
+        const bw = W / N - 1;
+        ctx.globalAlpha = isPlaying ? 0.85 : 0.35;
+        ctx.fillStyle   = color;
+        ctx.beginPath();
+        ctx.roundRect(i * (W / N), (H - h) / 2, Math.max(bw, 1), h, 1);
+        ctx.fill();
+      }
+      if (isPlaying) rafRef.current = requestAnimationFrame(draw);
+    };
+
+    draw();
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [isPlaying, color]);
+
+  return <canvas ref={canvasRef} width={width} height={height} style={{ display: "block" }} />;
+}
+
+// ---------- RadarChart ----------
+
+function RadarChart({ ma, mb }) {
+  const size = 200, cx = size / 2, cy = size / 2, r = 72, n = RADAR_AXES.length;
+
+  const polar = (i, dist) => {
+    const a = (i / n) * Math.PI * 2 - Math.PI / 2;
+    return [cx + Math.cos(a) * dist, cy + Math.sin(a) * dist];
+  };
+
+  const ring = (scale) => RADAR_AXES.map((_, i) => polar(i, r * scale)).map((p, i) => `${i === 0 ? "M" : "L"} ${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(" ") + " Z";
+
+  const buildPath = (model) => RADAR_AXES.map((ax, i) => {
+    const v = (model.scores[ax.k] - 50) / 50;
+    const [x, y] = polar(i, r * Math.max(0, Math.min(1, v)));
+    return `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
+  }).join(" ") + " Z";
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: "block" }}>
+        {[0.33, 0.66, 1].map((s, i) => (
+          <path key={i} d={ring(s)} fill="none" stroke={C.line} strokeWidth="0.5" />
+        ))}
+        {RADAR_AXES.map((_, i) => {
+          const [x, y] = polar(i, r);
+          return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke={C.lineSoft} strokeWidth="0.5" />;
+        })}
+        <path d={buildPath(ma)} fill={ma.color} fillOpacity="0.18" stroke={ma.color} strokeWidth="2" strokeLinejoin="round" />
+        <path d={buildPath(mb)} fill={mb.color} fillOpacity="0.18" stroke={mb.color} strokeWidth="2" strokeLinejoin="round" />
+        {RADAR_AXES.map((ax, i) => {
+          const [x, y] = polar(i, r + 16);
+          return <text key={i} x={x} y={y} fontSize="9" fill={C.gray} fontFamily={FONT} fontWeight="600" textAnchor="middle" dominantBaseline="middle">{ax.label}</text>;
+        })}
+      </svg>
+      <div style={{ display: "flex", gap: 14, justifyContent: "center" }}>
+        {[ma, mb].map((m, i) => (
+          <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, color: C.gray }}>
+            <span style={{ width: 10, height: 3, background: m.color, borderRadius: 2 }} /> {m.name}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // ---------- ModelSelector ----------
 
@@ -144,13 +244,27 @@ function ModelSelector({ value, onChange, side }) {
   );
 }
 
-// ---------- Step 4: SwitchboardCompare (old Switchboard body, SectionHeader removed) ----------
+// ---------- Step 4: SwitchboardCompare ----------
 
 function SwitchboardCompare() {
   const [a, setA] = useState("hume");
   const [b, setB] = useState("11l");
+  const [playing, setPlaying] = useState(null); // { row, side: "A"|"B" } | null
+  const [votes, setVotes] = useState({});         // { [rowIdx]: "A"|"B" }
   const ma = MODELS.find(m => m.id === a);
   const mb = MODELS.find(m => m.id === b);
+
+  const togglePlay = (row, side) => {
+    setPlaying(p => p?.row === row && p?.side === side ? null : { row, side });
+  };
+
+  const castVote = (row, side) => {
+    setVotes(v => ({ ...v, [row]: side }));
+  };
+
+  const clearVote = (row) => {
+    setVotes(v => { const n = { ...v }; delete n[row]; return n; });
+  };
 
   return (
     <div>
@@ -161,56 +275,119 @@ function SwitchboardCompare() {
         <ModelSelector value={b} onChange={setB} side="B" />
       </div>
 
-      {/* dimension comparison */}
-      <div style={{ background: C.white, border: `1px solid ${C.line}`, borderRadius: 10, padding: 24, marginBottom: 20 }}>
-        {compareRows.map((row, i) => {
-          const va = ma.scores[row.k];
-          const vb = mb.scores[row.k];
-          return (
-            <div key={row.k} style={{ paddingTop: i === 0 ? 0 : 22, paddingBottom: 22, borderBottom: i === compareRows.length - 1 ? "none" : `1px solid ${C.lineSoft}` }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: C.black }}>{row.label}</div>
-                  <div style={{ fontSize: 11, color: C.gray, marginTop: 2 }}>{row.caption}</div>
+      {/* dimension comparison + radar side by side */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 220px", gap: 16, marginBottom: 20, alignItems: "stretch" }}>
+        {/* bars */}
+        <div style={{ background: C.white, border: `1px solid ${C.line}`, borderRadius: 10, padding: 24 }}>
+          {compareRows.map((row, i) => {
+            const va = ma.scores[row.k];
+            const vb = mb.scores[row.k];
+            const total = va + vb;
+            return (
+              <div key={row.k} style={{ paddingTop: i === 0 ? 0 : 18, paddingBottom: 18, borderBottom: i === compareRows.length - 1 ? "none" : `1px solid ${C.lineSoft}` }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: C.black }}>{row.label}</div>
+                    <div style={{ fontSize: 11, color: C.gray, marginTop: 2 }}>{row.caption}</div>
+                  </div>
+                  <div style={{ display: "flex", gap: 20, alignItems: "baseline" }}>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: ma.color, letterSpacing: "-0.02em" }}>{va}</div>
+                    <div style={{ fontSize: 11, color: C.gray }}>vs</div>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: mb.color, letterSpacing: "-0.02em" }}>{vb}</div>
+                  </div>
                 </div>
-                <div style={{ display: "flex", gap: 24, alignItems: "baseline" }}>
-                  <div style={{ fontSize: 22, fontWeight: 700, color: ma.color, letterSpacing: "-0.02em" }}>{va}</div>
-                  <div style={{ fontSize: 11, color: C.gray }}>vs</div>
-                  <div style={{ fontSize: 22, fontWeight: 700, color: mb.color, letterSpacing: "-0.02em" }}>{vb}</div>
+                <div style={{ height: 6, borderRadius: 3, overflow: "hidden", background: mb.color + "44", display: "flex" }}>
+                  <div style={{ width: `${(va / total) * 100}%`, height: "100%", background: ma.color, transition: "width .4s ease", borderRadius: 3 }} />
                 </div>
               </div>
-              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <div style={{ flex: va, height: 6, background: ma.color, borderRadius: 3 }} />
-                <div style={{ flex: vb, height: 6, background: mb.color, borderRadius: 3, opacity: 0.85 }} />
+            );
+          })}
+        </div>
+
+        {/* SVG radar */}
+        <div style={{ background: C.white, border: `1px solid ${C.line}`, borderRadius: 10, padding: 16, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: C.gray, textTransform: "uppercase", marginBottom: 12, textAlign: "center" }}>All 5 axes</div>
+          <RadarChart ma={ma} mb={mb} />
+        </div>
+      </div>
+
+      {/* sample comparison rows with canvas waveform + vote */}
+      <div style={{ fontSize: 14, fontWeight: 600, color: C.black, marginBottom: 12 }}>Sample audio · paired rater task</div>
+      <div style={{ background: C.white, border: `1px solid ${C.line}`, borderRadius: 10, overflow: "hidden" }}>
+        {SAMPLES.map((sample, i) => {
+          const voted = votes[i];
+          const pctA  = voted === "A" ? 100 : voted === "B" ? 0 : sample.pctA;
+          return (
+            <div key={i}
+              style={{ display: "grid", gridTemplateColumns: "1.6fr 1.2fr 1.2fr 180px", padding: "16px 20px", borderTop: i === 0 ? "none" : `1px solid ${C.line}`, alignItems: "center", gap: 12 }}>
+              <div style={{ fontSize: 12, color: C.black, fontWeight: 600 }}>{sample.label}</div>
+
+              {/* Model A */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <button
+                  onClick={() => togglePlay(i, "A")}
+                  style={{ width: 28, height: 28, borderRadius: "50%", background: ma.color, border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+                  {playing?.row === i && playing?.side === "A"
+                    ? <Square size={10} fill={C.white} color={C.white} />
+                    : <Play   size={12} fill={C.white} color={C.white} />}
+                </button>
+                <WaveformCanvas
+                  isPlaying={playing?.row === i && playing?.side === "A"}
+                  color={ma.color}
+                />
+              </div>
+
+              {/* Model B */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <button
+                  onClick={() => togglePlay(i, "B")}
+                  style={{ width: 28, height: 28, borderRadius: "50%", background: mb.color, border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+                  {playing?.row === i && playing?.side === "B"
+                    ? <Square size={10} fill={C.white} color={C.white} />
+                    : <Play   size={12} fill={C.white} color={C.white} />}
+                </button>
+                <WaveformCanvas
+                  isPlaying={playing?.row === i && playing?.side === "B"}
+                  color={mb.color}
+                />
+              </div>
+
+              {/* Vote + animated preference bar */}
+              <div>
+                {!voted ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <div style={{ fontSize: 10, color: C.gray, fontWeight: 600 }}>Which is better?</div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button onClick={() => castVote(i, "A")}
+                        style={{ flex: 1, padding: "5px 0", background: C.white, border: `1.5px solid ${ma.color}`, color: ma.color, borderRadius: 5, fontSize: 11, fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>A</button>
+                      <button onClick={() => castVote(i, "B")}
+                        style={{ flex: 1, padding: "5px 0", background: C.white, border: `1.5px solid ${mb.color}`, color: mb.color, borderRadius: 5, fontSize: 11, fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>B</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+                      <div style={{ fontSize: 10, color: voted === "A" ? ma.color : mb.color, fontWeight: 700 }}>
+                        {voted} preferred · {voted === "A" ? pctA : 100 - pctA}%
+                      </div>
+                      <button onClick={() => clearVote(i)}
+                        style={{ background: "transparent", border: "none", cursor: "pointer", color: C.gray, padding: 2, display: "flex", alignItems: "center" }}>
+                        <RotateCcw size={11} />
+                      </button>
+                    </div>
+                    <div style={{ height: 6, background: mb.color + "33", borderRadius: 3, overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${pctA}%`, background: ma.color, transition: "width .5s cubic-bezier(.4,0,.2,1)", borderRadius: 3 }} />
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, color: C.gray, marginTop: 3 }}>
+                      <span style={{ color: ma.color, fontWeight: 600 }}>A {pctA}%</span>
+                      <span style={{ color: mb.color, fontWeight: 600 }}>B {100 - pctA}%</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           );
         })}
-      </div>
-
-      {/* sample comparison rows */}
-      <div style={{ fontSize: 14, fontWeight: 600, color: C.black, marginBottom: 12 }}>Sample audio · paired rater task</div>
-      <div style={{ background: C.white, border: `1px solid ${C.line}`, borderRadius: 10, overflow: "hidden" }}>
-        {SAMPLES.map((sample, i) => (
-          <div key={i} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", padding: "14px 20px", borderTop: i === 0 ? "none" : `1px solid ${C.line}`, alignItems: "center" }}>
-            <div style={{ fontSize: 12, color: C.black, fontWeight: 500 }}>{sample}</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <button style={{ width: 28, height: 28, borderRadius: "50%", background: ma.color, border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: C.white }}>
-                <Play size={12} fill={C.white} />
-              </button>
-              <div style={{ fontSize: 11, color: C.gray }}>{ma.name}</div>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <button style={{ width: 28, height: 28, borderRadius: "50%", background: mb.color, border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: C.white }}>
-                <Play size={12} fill={C.white} />
-              </button>
-              <div style={{ fontSize: 11, color: C.gray }}>{mb.name}</div>
-            </div>
-            <div style={{ fontSize: 11, color: C.gray, textAlign: "right" }}>
-              <span style={{ color: ma.color, fontWeight: 700 }}>62%</span> prefer A
-            </div>
-          </div>
-        ))}
       </div>
     </div>
   );
