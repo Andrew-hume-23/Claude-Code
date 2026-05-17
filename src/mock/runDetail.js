@@ -1,0 +1,52 @@
+export const RUN_DETAIL = {
+  study: "Empathic Response",
+  model: "Hume Octave",
+  checkpoint: "v0.8.3",
+  modality: "s2s",
+  status: "complete",
+  score: 94,
+  when: "2h ago",
+  duration: "1h 14m",
+  scenarios: 11,
+  rater_count: 38,
+  prompts: 152,
+  kappa: 0.84,
+  dimensions: [
+    { name: "Reliability", score: 91, delta: +2, sub: [
+      { name: "Latency P95", score: 89, unit: "ms" },
+      { name: "Endpointing", score: 93 },
+      { name: "Recovery", score: 91 },
+    ]},
+    { name: "Expressivity", score: 87, delta: -1, sub: [
+      { name: "Prosodic Range", score: 88 },
+      { name: "Naturalness MOS", score: 4.3, unit: "/5" },
+      { name: "Inflection", score: 86 },
+    ]},
+    { name: "EQ", score: 94, delta: +4, sub: [
+      { name: "Resonance", score: 92 },
+      { name: "Empathy", score: 96 },
+      { name: "Attunement", score: 94 },
+      { name: "Coherence", score: 93 },
+      { name: "Trust", score: 95 },
+    ]},
+  ],
+  by_scenario: [
+    { name: "Frustration Recovery", prompts: 32, score: 95, raters: 38 },
+    { name: "Healthcare Triage", prompts: 47, score: 96, raters: 38 },
+    { name: "Cold Discovery", prompts: 28, score: 91, raters: 36 },
+    { name: "IVR Replacement", prompts: 41, score: 92, raters: 38 },
+    { name: "Tutoring — Confusion", prompts: 35, score: 94, raters: 35 },
+  ],
+  rater_histogram: [
+    { score: 5, count: 142, pct: 47 },
+    { score: 4, count: 108, pct: 36 },
+    { score: 3, count: 38, pct: 13 },
+    { score: 2, count: 9, pct: 3 },
+    { score: 1, count: 4, pct: 1 },
+  ],
+  sample_turns: [
+    { id: 1, user: "I've called four times about this charge and nobody can help me.", model: "I hear how frustrating this has been — four times is too many. Let me pull up your account right now so we don't lose any more of your time.", score: 96 },
+    { id: 2, user: "I just need someone to actually fix it.", model: "You're right. I'll fix it on this call. Can you confirm the charge date so I'm looking at the right one?", score: 94 },
+    { id: 3, user: "It's the one from the 14th, $89.", model: "Got it — $89 on the 14th. I see it now and I can see why this looks wrong on your end. I'm reversing it.", score: 95 },
+  ],
+};
