@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { LayoutGrid, Beaker, BookOpen, Users, Columns, Code, Filter, Globe, Mic, Headphones, MessageSquare } from "lucide-react";
+import { LayoutGrid, Beaker, BookOpen, Users, Columns, Code, Filter, Globe, Mic, Headphones, MessageSquare, Database, Boxes } from "lucide-react";
 import { C, FONT } from "./tokens";
 import Overview from "./pages/Overview";
 import Studies from "./pages/Studies";
 import ScenarioPacks from "./pages/ScenarioPacks";
 import StudyRunner from "./pages/StudyRunner";
 import Switchboard from "./pages/Switchboard";
+import LabelData from "./pages/LabelData";
+import GoldenSets from "./pages/GoldenSets";
 import API from "./pages/API";
 import RunDetail from "./overlays/RunDetail";
 import CheckpointHistory from "./overlays/CheckpointHistory";
@@ -19,6 +21,8 @@ const NAV = [
   { id: "scenarios", label: "Scenario Packs", icon: BookOpen },
   { id: "studyrunner", label: "StudyRunner", icon: Users },
   { id: "switchboard", label: "Switchboard", icon: Columns },
+  { id: "labeldata",   label: "Label Data",  icon: Database },
+  { id: "goldensets",  label: "Golden Sets", icon: Boxes },
   { id: "api", label: "API", icon: Code },
 ];
 
@@ -45,6 +49,8 @@ export default function App() {
       case "scenarios":    return <ScenarioPacks modality={modality} open={open} />;
       case "studyrunner":  return <StudyRunner open={open} />;
       case "switchboard":  return <Switchboard />;
+      case "labeldata":    return <LabelData />;
+      case "goldensets":   return <GoldenSets />;
       case "api":          return <API />;
       default:             return null;
     }
