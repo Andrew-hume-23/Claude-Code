@@ -24,6 +24,12 @@ export default function ScenarioPacks({ modality, open }) {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+        {filtered.length === 0 && (
+          <div style={{ gridColumn: "1 / -1", padding: "60px 24px", textAlign: "center", border: `1px dashed ${C.line}`, borderRadius: 10 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.black, marginBottom: 4 }}>No packs for this modality</div>
+            <div style={{ fontSize: 12, color: C.gray }}>Try switching to "All modalities".</div>
+          </div>
+        )}
         {filtered.map(p => (
           <div
             key={p.id}

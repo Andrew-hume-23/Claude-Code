@@ -46,6 +46,12 @@ export default function Studies({ modality }) {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+        {filtered.length === 0 && (
+          <div style={{ gridColumn: "1 / -1", padding: "60px 24px", textAlign: "center", border: `1px dashed ${C.line}`, borderRadius: 10 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.black, marginBottom: 4 }}>No studies match these filters</div>
+            <div style={{ fontSize: 12, color: C.gray }}>Try changing the dimension or modality filter.</div>
+          </div>
+        )}
         {filtered.map(s => (
           <div
             key={s.id}
