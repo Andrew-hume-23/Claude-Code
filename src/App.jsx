@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { LayoutGrid, Beaker, BookOpen, Users, Columns, Code, Filter, Globe, Mic, Headphones, MessageSquare, Database, Boxes } from "lucide-react";
+import { LayoutGrid, Beaker, Users, Columns, Code, Filter, Globe, Mic, Headphones, MessageSquare, Database, Boxes, Activity, Sparkles, Trophy } from "lucide-react";
 import { C, FONT } from "./tokens";
 import Overview from "./pages/Overview";
 import Studies from "./pages/Studies";
-import ScenarioPacks from "./pages/ScenarioPacks";
 import StudyRunner from "./pages/StudyRunner";
 import Switchboard from "./pages/Switchboard";
 import LabelData from "./pages/LabelData";
 import GoldenSets from "./pages/GoldenSets";
+import AutoEval from "./pages/AutoEval";
+import HyperData from "./pages/HyperData";
+import Leaderboard from "./pages/Leaderboard";
 import API from "./pages/API";
 import RunDetail from "./overlays/RunDetail";
 import CheckpointHistory from "./overlays/CheckpointHistory";
@@ -15,15 +17,22 @@ import ScenarioAuthoring from "./overlays/ScenarioAuthoring";
 import RaterTask from "./overlays/RaterTask";
 import Drawer from "./ui/Drawer";
 
+// Each item is either a section divider { section: "..." } or a nav item { id, label, icon }
 const NAV = [
   { id: "overview", label: "Overview", icon: LayoutGrid },
-  { id: "studies", label: "Studies", icon: Beaker },
-  { id: "scenarios", label: "Scenario Packs", icon: BookOpen },
-  { id: "studyrunner", label: "StudyRunner", icon: Users },
-  { id: "switchboard", label: "Switchboard", icon: Columns },
-  { id: "labeldata",   label: "Label Data",  icon: Database },
-  { id: "goldensets",  label: "Golden Sets", icon: Boxes },
-  { id: "api", label: "API", icon: Code },
+  { section: "BUILD" },
+  { id: "goldensets",  label: "Golden Sets",     icon: Boxes },
+  { id: "hyperdata",   label: "Hyper Data",      icon: Sparkles },
+  { id: "labeldata",   label: "Data Explorer",   icon: Database },
+  { section: "MEASURE" },
+  { id: "studyrunner", label: "Human Ratings",   icon: Users },
+  { id: "studies",     label: "Eval Suite",      icon: Beaker },
+  { id: "switchboard", label: "Switchboard",     icon: Columns },
+  { section: "OBSERVE" },
+  { id: "autoeval",    label: "AutoEval",        icon: Activity },
+  { id: "leaderboard", label: "EQ Leaderboard",  icon: Trophy },
+  { section: "" },
+  { id: "api",         label: "API",             icon: Code },
 ];
 
 const MODALITIES = [
@@ -37,7 +46,6 @@ export default function App() {
   const [page, setPage] = useState("overview");
   const [modality, setModality] = useState("all");
   const [overlay, setOverlay] = useState(null);
-  // overlay: null | "run" | "checkpoints" | "authoring" | "rater"
 
   const open = (kind) => setOverlay(kind);
   const close = () => setOverlay(null);
@@ -46,11 +54,13 @@ export default function App() {
     switch (page) {
       case "overview":     return <Overview modality={modality} open={open} />;
       case "studies":      return <Studies modality={modality} />;
-      case "scenarios":    return <ScenarioPacks modality={modality} open={open} />;
       case "studyrunner":  return <StudyRunner open={open} />;
       case "switchboard":  return <Switchboard />;
       case "labeldata":    return <LabelData />;
       case "goldensets":   return <GoldenSets />;
+      case "hyperdata":    return <HyperData />;
+      case "autoeval":     return <AutoEval />;
+      case "leaderboard":  return <Leaderboard />;
       case "api":          return <API />;
       default:             return null;
     }
@@ -63,11 +73,20 @@ export default function App() {
         <div style={{ padding: "0 8px 24px", borderBottom: `1px solid ${C.beigeDeep}`, marginBottom: 16 }}>
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.2em", color: C.gray, marginBottom: 4 }}>HUME</div>
           <div style={{ fontSize: 17, fontWeight: 700, color: C.black, letterSpacing: "-0.02em" }}>Voice EQ</div>
-          <div style={{ fontSize: 10, color: C.gray, marginTop: 2 }}>Eval system · v0.4</div>
+          <div style={{ fontSize: 10, color: C.gray, marginTop: 2 }}>Eval system · v0.5</div>
         </div>
 
-        <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          {NAV.map(item => {
+        <nav style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+          {NAV.map((item, idx) => {
+            if ("section" in item) {
+              return item.section ? (
+                <div key={idx} style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", color: C.grayLight, textTransform: "uppercase", padding: "12px 10px 4px", marginTop: 4 }}>
+                  {item.section}
+                </div>
+              ) : (
+                <div key={idx} style={{ height: 1, background: C.beigeDeep, margin: "10px 4px" }} />
+              );
+            }
             const Icon = item.icon;
             const active = page === item.id;
             return (
@@ -89,7 +108,10 @@ export default function App() {
                   cursor: "pointer",
                   textAlign: "left",
                   boxShadow: active ? "0 1px 2px rgba(0,0,0,0.04)" : "none",
+                  transition: "background .1s, color .1s",
                 }}
+                onMouseEnter={e => { if (!active) { e.currentTarget.style.background = C.beigeDeep; e.currentTarget.style.color = C.black; } }}
+                onMouseLeave={e => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = C.gray; } }}
               >
                 <Icon size={15} />
                 {item.label}
