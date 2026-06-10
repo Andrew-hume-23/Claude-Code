@@ -57,11 +57,16 @@ export default function CheckpointHistory({ onClose }) {
         {/* list */}
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {CHECKPOINTS.map(c => (
-            <div key={c.id} style={{
-              border: c.current ? `2px solid ${C.purpleDeep}` : `1px solid ${C.line}`,
-              borderRadius: 10, padding: 16, position: "relative",
-              background: c.current ? "#FAFAFE" : C.white,
-            }}>
+            <div key={c.id}
+              style={{
+                border: c.current ? `2px solid ${C.purpleDeep}` : `1px solid ${C.line}`,
+                borderRadius: 10, padding: 16, position: "relative",
+                background: c.current ? "#FAFAFE" : C.white,
+                cursor: "pointer", transition: "border-color .15s",
+              }}
+              onMouseEnter={e => { if (!c.current) e.currentTarget.style.borderColor = C.black; }}
+              onMouseLeave={e => { if (!c.current) e.currentTarget.style.borderColor = C.line; }}
+            >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>

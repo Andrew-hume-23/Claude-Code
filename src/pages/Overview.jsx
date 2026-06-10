@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Plus, ArrowUpRight } from "lucide-react";
 import { C } from "../tokens";
 import { RECENT_RUNS } from "../mock/runs";
@@ -8,6 +9,7 @@ import ModalityChip from "../ui/ModalityChip";
 import StatusPill from "../ui/StatusPill";
 
 export default function Overview({ modality, open }) {
+  const [hovStat, setHovStat] = useState(null);
   const filtered = modality === "all" ? RECENT_RUNS : RECENT_RUNS.filter(r => r.modality === modality);
 
   const stats = [
@@ -28,7 +30,10 @@ export default function Overview({ modality, open }) {
       {/* stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 32 }}>
         {stats.map((s, i) => (
-          <div key={i} style={{ background: C.white, border: `1px solid ${C.line}`, borderRadius: 10, padding: 18 }}>
+          <div key={i}
+            onMouseEnter={() => setHovStat(i)}
+            onMouseLeave={() => setHovStat(null)}
+            style={{ background: C.white, border: `1px solid ${hovStat === i ? C.black : C.line}`, borderRadius: 10, padding: 18, transition: "border-color .15s" }}>
             <div style={{ fontSize: 11, color: C.gray, fontWeight: 500, marginBottom: 10 }}>{s.label}</div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
               <div style={{ fontSize: 28, fontWeight: 700, color: C.black, letterSpacing: "-0.02em" }}>{s.value}</div>
@@ -80,6 +85,11 @@ export default function Overview({ modality, open }) {
           <div style={{ display: "grid", gridTemplateColumns: "1.8fr 1.4fr 0.6fr 0.8fr 0.6fr 0.6fr 0.6fr", padding: "10px 16px", background: C.lineSoft, fontSize: 10, fontWeight: 700, color: C.gray, letterSpacing: "0.08em", textTransform: "uppercase" }}>
             <div>Study</div><div>Model</div><div>Mod.</div><div>Status</div><div>Raters</div><div>Score</div><div></div>
           </div>
+          {filtered.length === 0 && (
+            <div style={{ padding: "48px 24px", textAlign: "center", color: C.gray, fontSize: 13 }}>
+              No runs match this modality filter yet.
+            </div>
+          )}
           {filtered.map((r, i) => (
             <div
               key={r.id}

@@ -43,7 +43,11 @@ export default function StudyRunner({ open }) {
 
       <div style={{ background: C.white, border: `1px solid ${C.line}`, borderRadius: 10, overflow: "hidden" }}>
         {activeStudies.map((s, i) => (
-          <div key={s.id} style={{ padding: "16px 20px", borderTop: i === 0 ? "none" : `1px solid ${C.line}` }}>
+          <div key={s.id}
+            style={{ padding: "16px 20px", borderTop: i === 0 ? "none" : `1px solid ${C.line}`, cursor: "pointer", background: C.white, transition: "background .12s" }}
+            onMouseEnter={e => e.currentTarget.style.background = C.lineSoft}
+            onMouseLeave={e => e.currentTarget.style.background = C.white}
+          >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: C.black }}>{s.name}</div>
               <div style={{ display: "flex", gap: 10, alignItems: "center" }}>

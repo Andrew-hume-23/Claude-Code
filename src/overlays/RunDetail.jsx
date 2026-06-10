@@ -64,7 +64,11 @@ export default function RunDetail({ onClose }) {
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: C.gray, textTransform: "uppercase", marginBottom: 12 }}>By scenario</div>
         <div style={{ border: `1px solid ${C.line}`, borderRadius: 10, overflow: "hidden", marginBottom: 28 }}>
           {r.by_scenario.map((s, i) => (
-            <div key={i} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 60px", padding: "12px 16px", borderTop: i === 0 ? "none" : `1px solid ${C.line}`, alignItems: "center", fontSize: 13 }}>
+            <div key={i}
+              style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 60px", padding: "12px 16px", borderTop: i === 0 ? "none" : `1px solid ${C.line}`, alignItems: "center", fontSize: 13, cursor: "pointer", transition: "background .12s" }}
+              onMouseEnter={e => e.currentTarget.style.background = C.lineSoft}
+              onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+            >
               <div style={{ fontWeight: 600, color: C.black }}>{s.name}</div>
               <div style={{ fontSize: 11, color: C.gray }}>{s.prompts} prompts</div>
               <div style={{ fontSize: 11, color: C.gray }}>{s.raters} raters</div>
@@ -92,7 +96,11 @@ export default function RunDetail({ onClose }) {
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: C.gray, textTransform: "uppercase", marginBottom: 12 }}>Sample turns · highest rated</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {r.sample_turns.map(t => (
-            <div key={t.id} style={{ border: `1px solid ${C.line}`, borderRadius: 10, padding: 14 }}>
+            <div key={t.id}
+              style={{ border: `1px solid ${C.line}`, borderRadius: 10, padding: 14, cursor: "pointer", transition: "border-color .15s" }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = C.black}
+              onMouseLeave={e => e.currentTarget.style.borderColor = C.line}
+            >
               <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 8 }}>
                 <span style={{ fontSize: 10, fontWeight: 700, color: C.gray, background: C.lineSoft, padding: "2px 6px", borderRadius: 3 }}>USER</span>
                 <div style={{ fontSize: 12, color: C.ink, lineHeight: 1.5 }}>{t.user}</div>
