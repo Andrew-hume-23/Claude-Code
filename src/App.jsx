@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LayoutGrid, Beaker, Users, Columns, Code, Filter, Globe, Mic, Headphones, MessageSquare, Database, Boxes, Activity, Sparkles, Trophy } from "lucide-react";
+import { LayoutGrid, Beaker, Users, Columns, Code, Filter, Globe, Mic, Headphones, MessageSquare, Database, Boxes, Activity, Sparkles, Trophy, Repeat } from "lucide-react";
 import { C, FONT } from "./tokens";
 import Overview from "./pages/Overview";
 import Studies from "./pages/Studies";
@@ -11,6 +11,7 @@ import AutoEval from "./pages/AutoEval";
 import HyperData from "./pages/HyperData";
 import Leaderboard from "./pages/Leaderboard";
 import API from "./pages/API";
+import Flywheel from "./pages/Flywheel";
 import RunDetail from "./overlays/RunDetail";
 import CheckpointHistory from "./overlays/CheckpointHistory";
 import ScenarioAuthoring from "./overlays/ScenarioAuthoring";
@@ -20,6 +21,7 @@ import Drawer from "./ui/Drawer";
 // Each item is either a section divider { section: "..." } or a nav item { id, label, icon }
 const NAV = [
   { id: "overview", label: "Overview", icon: LayoutGrid },
+  { id: "flywheel", label: "Moat Flywheel", icon: Repeat },
   { section: "BUILD" },
   { id: "goldensets",  label: "Golden Sets",     icon: Boxes },
   { id: "hyperdata",   label: "Hyper Data",      icon: Sparkles },
@@ -53,6 +55,7 @@ export default function App() {
   const renderPage = () => {
     switch (page) {
       case "overview":     return <Overview modality={modality} open={open} />;
+      case "flywheel":     return <Flywheel />;
       case "studies":      return <Studies modality={modality} />;
       case "studyrunner":  return <StudyRunner open={open} />;
       case "switchboard":  return <Switchboard />;
